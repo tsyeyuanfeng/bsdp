@@ -1,6 +1,6 @@
 {
   "name": "bsdp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "An binary diff&patch library based on bsdiff algorithm(v4.3)",
   "bin": {
     "bsdp": "./bin/bsdp"
@@ -23,10 +23,8 @@
   "keywords": [
     "bsdiff",
     "bspatch",
-    "binary",
-    "diff",
-    "binary",
-    "patch"
+    "binary diff",
+    "binary patch"
   ],
   "author": "Yaphet Ye <tsyeyuanfeng@126.com>",
   "license": "MIT",
