@@ -17,7 +17,7 @@ namespace bsdpNode {
     HandleScope scope(isolate);
     
     if (!args[0]->IsString() || !args[1]->IsString() || !args[2]->IsString()) {
-      isolate->ThrowException(Exception::TypeError(
+      isolate->ThrowException(Exception::Error(
                         String::NewFromUtf8(isolate, "Invalid arguments.")));
       return;
     }
@@ -40,8 +40,9 @@ namespace bsdpNode {
     HandleScope scope(isolate);
 
     if (!args[0]->IsString() || !args[1]->IsString() || !args[2]->IsString()) {
-      isolate->ThrowException(Exception::TypeError(
+      isolate->ThrowException(Exception::Error(
                         String::NewFromUtf8(isolate, "Invalid arguments.")));
+      return;
     }
     
     String::Utf8Value oldfile(args[0]);
