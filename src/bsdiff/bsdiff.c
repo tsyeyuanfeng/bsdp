@@ -195,36 +195,22 @@ static void offtout(off_t x,u_char *buf)
 	if(x<0) buf[7]|=0x80;
 }
 
-int bsdiff(const char* error, const char* oldfile, const char* newfile, const char* patchfile) {
-	int fd;
-	u_char *old,*new;
-	off_t oldsize,newsize;
+int bsdiff_buf(const char* error, const char *old, size_t oldsize, char *new, size_t newsize, char **patch_buf) {
 	off_t *I,*V;
+	u_char *db,*eb;
 	off_t scan,pos,len;
-	off_t lastscan,lastpos,lastoffset;
+	u_char header[32];
 	off_t oldscore,scsc;
 	off_t s,Sf,lenf,Sb,lenb;
-	off_t overlap,Ss,lens;
+	off_t lastscan,lastpos,lastoffset;
 	off_t i;
-	off_t dblen,eblen;
-	u_char *db,*eb;
 	u_char buf[8];
-	u_char header[32];
-	FILE * pf;
-	BZFILE * pfbz2;
+	off_t overlap,Ss,lens;
+	off_t dblen,eblen;
 	int bz2err;
-
-	/* Allocate oldsize+1 bytes instead of oldsize bytes to ensure
-		that we never try to malloc(0) and get a NULL pointer */
-	if(((fd=open(oldfile,O_RDONLY,0))<0) ||
-		((oldsize=lseek(fd,0,SEEK_END))==-1) ||
-		((old=malloc(oldsize+1))==NULL) ||
-		(lseek(fd,0,SEEK_SET)!=0) ||
-		(read(fd,old,oldsize)!=oldsize) ||
-		(close(fd)==-1)) {
-			sprintf((char*)error, "\"%s\" %s", oldfile, strerror(errno));
-			return -1;
-	}
+	BZFILE * pfbz2;
+	FILE * pf;
+	size_t patch_len;
 
 	if(((I=malloc((oldsize+1)*sizeof(off_t)))==NULL) ||
 		((V=malloc((oldsize+1)*sizeof(off_t)))==NULL)) {
@@ -236,28 +222,16 @@ int bsdiff(const char* error, const char* oldfile, const char* newfile, const ch
 
 	free(V);
 	
-	/* Allocate newsize+1 bytes instead of newsize bytes to ensure
-		that we never try to malloc(0) and get a NULL pointer */
-	if(((fd=open(newfile,O_RDONLY,0))<0) ||
-		((newsize=lseek(fd,0,SEEK_END))==-1) ||
-		((new=malloc(newsize+1))==NULL) ||
-		(lseek(fd,0,SEEK_SET)!=0) ||
-		(read(fd,new,newsize)!=newsize) ||
-		(close(fd)==-1)) {
-			sprintf((char*)error, "\"%s\" %s", newfile, strerror(errno));
-			return -1;
-	}
-	
 	if(((db=malloc(newsize+1))==NULL) ||
 		((eb=malloc(newsize+1))==NULL)) err(1,NULL);
 	dblen=0;
 	eblen=0;
-		
-	/* Create the patch file */
-	if ((pf = fopen(patchfile, "w")) == NULL) {
-		sprintf((char*)error, "\"%s\" %s", patchfile, strerror(errno));
+
+	if ((pf = open_memstream(patch_buf, &patch_len)) == NULL) {
+		sprintf((char*)error, "open patch_buf failed: %s", strerror(errno));
 		return -1;
-	}	
+	}
+
 	
 	/* Header is
 		0	8	 "BSDIFF40"
@@ -273,10 +247,12 @@ int bsdiff(const char* error, const char* oldfile, const char* newfile, const ch
 	offtout(0, header + 8);
 	offtout(0, header + 16);
 	offtout(newsize, header + 24);
+
 	if (fwrite(header, 32, 1, pf) != 1) {
-		sprintf((char*)error, "\"%s\" %s", patchfile, strerror(errno));
+		sprintf((char*)error, "write header for patch failed: %s", strerror(errno));
 		return -1;
-	}		
+	}	
+
 
 	/* Compute the differences, writing ctrl as we go */
 	if ((pfbz2 = BZ2_bzWriteOpen(&bz2err, pf, 9, 0, 0)) == NULL) {
@@ -372,6 +348,8 @@ int bsdiff(const char* error, const char* oldfile, const char* newfile, const ch
 			lastoffset=pos-scan;
 		};
 	};
+
+
 	BZ2_bzWriteClose(&bz2err, pfbz2, 0, NULL, NULL);
 	if (bz2err != BZ_OK) {
 		sprintf((char*)error, "BZ2_bzWriteClose, bz2err = %d", bz2err);
@@ -403,6 +381,7 @@ int bsdiff(const char* error, const char* oldfile, const char* newfile, const ch
 		return -1;
 	}	
 
+
 	/* Compute size of compressed diff data */
 	if ((newsize = ftello(pf)) == -1) {
 		sprintf((char*)error, "\"ftello\" %s", strerror(errno));
@@ -428,15 +407,18 @@ int bsdiff(const char* error, const char* oldfile, const char* newfile, const ch
 		return -1;
 	}		
 
+	// 只有在这里才能去到正确的长度，否则之后的代码会把pos设置为0
+	size_t real_len = ftello(pf);
 	/* Seek to the beginning, write the header, and close the file */
 	if (fseeko(pf, 0, SEEK_SET)) {
 		sprintf((char*)error, "\"fseeko\" %s", strerror(errno));
 		return -1;
 	}	
 	if (fwrite(header, 32, 1, pf) != 1) {
-		sprintf((char*)error, "\"%s\" %s", patchfile, strerror(errno));
+		sprintf((char*)error, "write header for patch failed: %s", strerror(errno));
 		return -1;
-	}	
+	}
+
 	if (fclose(pf)) {
 		sprintf((char*)error, "\"fclose\" %s", strerror(errno));
 		return -1;
@@ -446,6 +428,54 @@ int bsdiff(const char* error, const char* oldfile, const char* newfile, const ch
 	free(db);
 	free(eb);
 	free(I);
+	return real_len;
+}
+
+int bsdiff(const char* error, const char* oldfile, const char* newfile, const char* patchfile) {
+	int fd;
+	u_char *old,*new;
+	off_t oldsize,newsize;
+	FILE * pf;
+	char *patch_buf;
+	off_t patch_size;
+
+	/* Allocate oldsize+1 bytes instead of oldsize bytes to ensure
+		that we never try to malloc(0) and get a NULL pointer */
+	if(((fd=open(oldfile,O_RDONLY,0))<0) ||
+		((oldsize=lseek(fd,0,SEEK_END))==-1) ||
+		((old=malloc(oldsize+1))==NULL) ||
+		(lseek(fd,0,SEEK_SET)!=0) ||
+		(read(fd,old,oldsize)!=oldsize) ||
+		(close(fd)==-1)) {
+			sprintf((char*)error, "\"%s\" %s", oldfile, strerror(errno));
+			return -1;
+	}
+	
+	/* Allocate newsize+1 bytes instead of newsize bytes to ensure
+		that we never try to malloc(0) and get a NULL pointer */
+	if(((fd=open(newfile,O_RDONLY,0))<0) ||
+		((newsize=lseek(fd,0,SEEK_END))==-1) ||
+		((new=malloc(newsize+1))==NULL) ||
+		(lseek(fd,0,SEEK_SET)!=0) ||
+		(read(fd,new,newsize)!=newsize) ||
+		(close(fd)==-1)) {
+			sprintf((char*)error, "\"%s\" %s", newfile, strerror(errno));
+			return -1;
+	}
+	
+	
+	if ((pf = fopen(patchfile, "w")) == NULL) {
+		sprintf((char*)error, "\"%s\" %s", patchfile, strerror(errno));
+		return -1;
+	}
+
+	patch_size = bsdiff_buf(error, old, oldsize, new, newsize, &patch_buf);
+	fwrite(patch_buf, sizeof(char), patch_size, pf);
+	free(patch_buf);
+	if (fclose(pf)) {
+		sprintf((char*)error, "\"fclose\" %s", strerror(errno));
+		return -1;
+	}
 	free(old);
 	free(new);
 
