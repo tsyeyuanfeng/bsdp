@@ -30,6 +30,5 @@
 #include <stdint.h>
 
 int bsdiff(const char* error, const char* oldfile, const char* newfile, const char* patchfile);
-int bsdiff_buf(const char* error, const char *old_buf, size_t oldsize, char *new_buf, size_t newsize, char **patch_buf);
 
 #endif 
