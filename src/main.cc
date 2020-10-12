@@ -22,9 +22,9 @@ namespace bsdpNode {
       return;
     }
     
-    String::Utf8Value oldfile(args[0]);
-    String::Utf8Value newfile(args[1]);
-    String::Utf8Value patchfile(args[2]);
+    String::Utf8Value oldfile(isolate, args[0]);
+    String::Utf8Value newfile(isolate, args[1]);
+    String::Utf8Value patchfile(isolate, args[2]);
 
 
     char error[1024];
@@ -45,9 +45,9 @@ namespace bsdpNode {
       return;
     }
     
-    String::Utf8Value oldfile(args[0]);
-    String::Utf8Value newfile(args[1]);
-    String::Utf8Value patchfile(args[2]);
+    String::Utf8Value oldfile(isolate, args[0]);
+    String::Utf8Value newfile(isolate, args[1]);
+    String::Utf8Value patchfile(isolate, args[2]);
 
     char error[1024];
     int ret = bspatch(error, *oldfile, *newfile, *patchfile);   
