@@ -1,5 +1,4 @@
-#include <node.h>
-#include <node_buffer.h>
+#include <napi.h>
 
 #include <memory.h>
 #include <stdlib.h>
@@ -10,57 +9,37 @@ extern "C" {
 }
 
 namespace bsdpNode {
-  using namespace v8;
+  using namespace Napi;
 
-  void diff(const FunctionCallbackInfo<Value>& args) {
-    Isolate* isolate = args.GetIsolate();
-    HandleScope scope(isolate);
-    
-    if (!args[0]->IsString() || !args[1]->IsString() || !args[2]->IsString()) {
-      isolate->ThrowException(Exception::Error(
-                        String::NewFromUtf8(isolate, "Invalid arguments.")));
-      return;
-    }
-    
-    String::Utf8Value oldfile(args[0]);
-    String::Utf8Value newfile(args[1]);
-    String::Utf8Value patchfile(args[2]);
-
-
+  void diff(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+    const std::string oldfile = info[0].As<Napi::String>().Utf8Value();
+    const std::string newfile = info[1].As<Napi::String>().Utf8Value();
+    const std::string patchfile = info[2].As<Napi::String>().Utf8Value();
     char error[1024];
-    int ret = bsdiff(error, *oldfile, *newfile, *patchfile);   
+    int ret = bsdiff(error, oldfile.c_str(), newfile.c_str(), patchfile.c_str());
     if(ret != 0) {
-      isolate->ThrowException(Exception::Error(
-                        String::NewFromUtf8(isolate, error)));
-    }        
-  }
-
-  void patch(const FunctionCallbackInfo<Value>& args) {
-    Isolate* isolate = args.GetIsolate();
-    HandleScope scope(isolate);
-
-    if (!args[0]->IsString() || !args[1]->IsString() || !args[2]->IsString()) {
-      isolate->ThrowException(Exception::Error(
-                        String::NewFromUtf8(isolate, "Invalid arguments.")));
-      return;
+      Napi::Error::New(env, error).ThrowAsJavaScriptException();
     }
-    
-    String::Utf8Value oldfile(args[0]);
-    String::Utf8Value newfile(args[1]);
-    String::Utf8Value patchfile(args[2]);
+  }
 
+  void patch(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+    const std::string oldfile = info[0].As<Napi::String>().Utf8Value();
+    const std::string newfile = info[1].As<Napi::String>().Utf8Value();
+    const std::string patchfile = info[2].As<Napi::String>().Utf8Value();
     char error[1024];
-    int ret = bspatch(error, *oldfile, *newfile, *patchfile);   
+    int ret = bspatch(error, oldfile.c_str(), newfile.c_str(), patchfile.c_str());
     if(ret != 0) {
-      isolate->ThrowException(Exception::Error(
-                        String::NewFromUtf8(isolate, error)));
-    }    
+      Napi::Error::New(env, error).ThrowAsJavaScriptException();
+    }
   }
 
-  void init(Local<Object> exports) {
-    NODE_SET_METHOD(exports, "diff", diff);
-    NODE_SET_METHOD(exports, "patch", patch);
+  Napi::Object init(Napi::Env env, Napi::Object exports) {
+    exports.Set(Napi::String::New(env, "diff"), Napi::Function::New(env, diff));
+    exports.Set(Napi::String::New(env, "patch"), Napi::Function::New(env, patch));
+    return exports;
   }
 
-  NODE_MODULE(bsdp, init)
+  NODE_API_MODULE(bsdp, init)
 }

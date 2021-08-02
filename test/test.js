@@ -11,7 +11,7 @@ describe('bsdp', () => {
         () => {
           bsdp.diff();
         }, 
-        error => error.message === 'Invalid arguments.', 
+        error => true,
         'bsdp diff function did not throw error when arguments\' format is not correct.'
       );
 
@@ -19,7 +19,7 @@ describe('bsdp', () => {
         () => {
           bsdp.diff(1);
         }, 
-        error => true, 
+        error => true,
         'bsdp diff function did not throw error when arguments\' format is not correct.'
       );
 
@@ -27,7 +27,7 @@ describe('bsdp', () => {
         () => {
           bsdp.diff("1");
         }, 
-        error => error.message === 'Invalid arguments.', 
+        error => true,
         'bsdp diff function did not throw error when arguments\' format is not correct.'
       );
 
@@ -35,7 +35,7 @@ describe('bsdp', () => {
         () => {
           bsdp.diff("1", 1);
         }, 
-        error => error.message === 'Invalid arguments.', 
+        error => true,
         'bsdp diff function did not throw error when arguments\' format is not correct.'
       );
 
@@ -43,7 +43,7 @@ describe('bsdp', () => {
         () => {
           bsdp.diff("1", "1");
         }, 
-        error => error.message === 'Invalid arguments.', 
+        error => true,
         'bsdp diff function did not throw error when arguments\' format is not correct.'
       );
 
@@ -51,7 +51,7 @@ describe('bsdp', () => {
         () => {
           bsdp.diff("1", "1", 1);
         }, 
-        error => error.message === 'Invalid arguments.', 
+        error => true,
         'bsdp diff function did not throw error when arguments\' format is not correct.'
       );      
     });
@@ -84,7 +84,7 @@ describe('bsdp', () => {
         () => {
           bsdp.patch();
         }, 
-        error => error.message === 'Invalid arguments.', 
+        error => true,
         'bsdp patch function did not throw error when arguments\' format is not correct.'
       );
 
@@ -92,7 +92,7 @@ describe('bsdp', () => {
         () => {
           bsdp.patch(1);
         }, 
-        error => true, 
+        error => true,
         'bsdp patch function did not throw error when arguments\' format is not correct.'
       );
 
@@ -100,7 +100,7 @@ describe('bsdp', () => {
         () => {
           bsdp.patch("1");
         }, 
-        error => error.message === 'Invalid arguments.', 
+        error => true,
         'bsdp patch function did not throw error when arguments\' format is not correct.'
       );
 
@@ -108,7 +108,7 @@ describe('bsdp', () => {
         () => {
           bsdp.patch("1", 1);
         }, 
-        error => error.message === 'Invalid arguments.', 
+        error => true,
         'bsdp patch function did not throw error when arguments\' format is not correct.'
       );
 
@@ -116,7 +116,7 @@ describe('bsdp', () => {
         () => {
           bsdp.patch("1", "1");
         }, 
-        error => error.message === 'Invalid arguments.', 
+        error => true,
         'bsdp patch function did not throw error when arguments\' format is not correct.'
       );
 
@@ -124,7 +124,7 @@ describe('bsdp', () => {
         () => {
           bsdp.patch("1", "1", 1);
         }, 
-        error => error.message === 'Invalid arguments.', 
+        error => true,
         'bsdp patch function did not throw error when arguments\' format is not correct.'
       ); 
     });

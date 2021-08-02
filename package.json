@@ -1,13 +1,14 @@
 {
   "name": "bsdp",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "An binary diff&patch library based on bsdiff algorithm(v4.3)",
   "bin": {
     "bsdp": "./bin/bsdp"
   },
   "main": "index.js",
   "dependencies": {
-    "commander": "^2.11.0"
+    "commander": "^2.11.0",
+    "node-addon-api": "^1.1.0"
   },
   "devDependencies": {
     "mocha": "^3.4.2"
